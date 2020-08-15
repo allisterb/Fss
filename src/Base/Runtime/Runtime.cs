@@ -44,11 +44,10 @@ namespace Fss
 
         public static string[] ExcludedAssemblyNames { get; } = new string[0];
 
-        public static List<Assembly> LoadedAssemblies { get; internal set; }
-
-        public virtual bool Initialized { get; protected set; }
 
         public CancellationToken CancellationToken { get; protected set; }
+
+        public virtual bool Initialized { get; protected set; }
 
         public Type Type { get; }
 
@@ -77,6 +76,10 @@ namespace Fss
         }
 
         public static void Info(string messageTemplate, params object[] args) => Logger.Info(messageTemplate, args);
+
+        public static void Verbose(string messageTemplate, params object[] args) => Logger.Info("VERBOSE:" + messageTemplate, args);
+
+        public static void Warn(string messageTemplate, params object[] args) => Logger.Info("WARN:" + messageTemplate, args);
 
         public static void Debug(string messageTemplate, params object[] args) => Logger.Debug(messageTemplate, args);
 

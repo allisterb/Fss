@@ -198,9 +198,9 @@ namespace Fss.Rasp
                 else
                 {
                     Error(ex, "Error occurred during {0} client queue observng in service {1}.",
-                    client.Name, Name);
+                    client.GetType().Name, Name);
                 }
-                Info("Resuming {0} client queue observer in service {1}.", client.Name, type.Name);
+                Info("Resuming {0} client queue observer in service {1}.", client.GetType().Name, type.Name);
                 ObserveClientQueue(client, token);
             }
         }

@@ -9,8 +9,6 @@ namespace Fss.Rasp
 {
     public abstract class Interface : RaspApi<Interface, Message>
     {
-        public static CancellationToken CancellationToken = Global.CancellationTokenSource.Token;
-
         public static Dictionary<int, string> GetCurrentProcesses()
         {
             return Process.GetProcesses()

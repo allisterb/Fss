@@ -10,14 +10,12 @@ namespace Fss.Rasp
         where TMessage : Message
     {
         #region Constructors
-        public ActivityDetector(int pid, IMonitor monitor, Type mt)
+        public ActivityDetector(int pid, IMonitor monitor)
         {
             processId = pid;
             Monitor = monitor;
-            monitorType = mt;
+            Global.MessageQueue.Add(this);
         }
-
-        public ActivityDetector(IMonitor monitor, Type mt) : this(0, monitor, mt) {}
         #endregion
 
         #region Abstract methods

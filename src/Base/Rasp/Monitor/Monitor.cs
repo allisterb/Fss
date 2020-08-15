@@ -21,34 +21,30 @@ namespace Fss.Rasp
             this.Profile = profile;
         }
         #endregion
+
         #region Abstract methods
         public abstract ApiResult Init();
         protected abstract ApiResult ProcessDetectorQueueMessage(TDetectorMessage message);
         #endregion
 
         #region Properties
-        public Type QueueMessageType { get; } = typeof(TMonitorMessage);
-
-        public Thread QueueObserverThread { get; protected set; }
-        
         public Profile Profile { get; protected set; }
 
         protected List<TDetector> Detectors { get; set; } = new List<TDetector>();
 
+        public List<Thread> QueueObserverThreads { get; protected set; } = new List<Thread>();
+
         public bool ShutdownRequested => shutdownRequested;
 
         public bool ShutdownCompleted => shutdownCompleted;
-
-        public List<Thread> Threads { get; protected set; }
         #endregion
 
         #region Methods
         public virtual ApiResult Start()
         {
             ThrowIfNotInitialized();
-            QueueObserverThread = new Thread(() => ObserveDetectorQueue(Global.CancellationTokenSource.Token));
-            Threads = new List<Thread>() { QueueObserverThread };
-            QueueObserverThread.Start();
+            Detectors.ForEach(d => QueueObserverThreads.Add(new Thread(() => ObserveDetectorQueue(d, Global.CancellationTokenSource.Token))));
+            QueueObserverThreads.ForEach(t => t.Start());
             int enabled = 0;
             foreach (TDetector d in Detectors)
             {
@@ -82,12 +78,12 @@ namespace Fss.Rasp
                 Global.CancellationTokenSource.Cancel();
             }
             int waitCount = 0;
-            while (Threads.Any(t => t.IsAlive) && waitCount < 30)
+            while (QueueObserverThreads.Any(t => t.IsAlive) && waitCount < 30)
             {
                 Thread.Sleep(100);
                 waitCount++;
             }
-            if (Threads.All(t => !t.IsAlive))
+            if (QueueObserverThreads.All(t => !t.IsAlive))
             {
                 shutdownCompleted = true;
                 Info("All threads stopped. {0} monitor shutdown completed successfully.", Name);
@@ -95,13 +91,13 @@ namespace Fss.Rasp
             }
             else
             {
-                Info("{0} threads in {1} did not stop. Aborting {0} threads", Threads.Count(t => t.IsAlive),
+                Info("{0} threads in {1} did not stop. Aborting {0} threads", QueueObserverThreads.Count(t => t.IsAlive),
                     this.GetType().Name);
-                foreach(Thread thread in Threads.Where(t => t.IsAlive))
+                foreach(Thread thread in QueueObserverThreads.Where(t => t.IsAlive))
                 {
                     thread.Abort();
                 }
-                if (Threads.All(t => !t.IsAlive))
+                if (QueueObserverThreads.All(t => !t.IsAlive))
                 {
                     shutdownCompleted = true;
                     Info("All threads stopped. {0} monitor shutdown completed successfully.", Name);
@@ -114,19 +110,14 @@ namespace Fss.Rasp
             }
         }
 
-        protected virtual void ObserveDetectorQueue(CancellationToken token)
+        protected virtual void ObserveDetectorQueue(ActivityDetector<TDetectorMessage> detector, CancellationToken token)
         {
             try
             {
                 while (!shutdownRequested && !token.IsCancellationRequested)
                 {
                     TDetectorMessage message =
-                        (TDetectorMessage)Global.MessageQueue.Dequeue<TDetector>(cancellationToken);
-                    if (ProcessDetectorQueueMessage(message) == ApiResult.NoOp)
-                    {
-                        Global.MessageQueue.Enqueue<TDetector>(message);
-                        Thread.Sleep(100);
-                    }
+                        (TDetectorMessage)Global.MessageQueue.Dequeue(detector, cancellationToken);
                 }
                 Info("Stopping {0} detector queue observer in monitor {1}.", typeof(TDetector).Name, Name);
                 Status = ApiStatus.Ok;
@@ -141,7 +132,6 @@ namespace Fss.Rasp
             catch (Exception ex)
             {
                 Error(ex, "Error occurred during {0} detector queue observing in {1}. Resuming.", typeof(TDetector).Name, Name);
-                ObserveDetectorQueue(token);
             }
         }
         #endregion

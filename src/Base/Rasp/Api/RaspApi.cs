@@ -2,15 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Fss.Rasp
 {
-    public abstract class RaspApi<TApi, TMessage>
+    public abstract class RaspApi<TApi, TMessage> : Runtime
         where TMessage : Message
     {
         #region Constructors
@@ -51,17 +48,11 @@ namespace Fss.Rasp
         public RaspApi()
         {
             type = this.GetType();
-            if (L == null)
-            {
-                throw new InvalidOperationException("A logger is not assigned.");
-            }
             cancellationToken = Global.CancellationTokenSource.Token;
         }
         #endregion
 
         #region Properties
-        public Type Type => type;
-
         public virtual string Name => type.Name;
 
         public string Description
@@ -77,17 +68,10 @@ namespace Fss.Rasp
                 {
                     return string.Empty;
                 }
-
             }
         }
 
         public ApiStatus Status { get; protected set; } = ApiStatus.Unknown;
-
-        public static DirectoryInfo AssemblyDirectory { get; } = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-
-        public static Version AssemblyVersion { get; } = Assembly.GetExecutingAssembly().GetName().Version;
-
-        public static DirectoryInfo CurrentDirectory { get; } = new DirectoryInfo(Directory.GetCurrentDirectory());
 
         public static DirectoryInfo DataDirectory { get; }
 
@@ -96,8 +80,6 @@ namespace Fss.Rasp
         public static DirectoryInfo BaseArtifactsDirectory { get; }
 
         public static DirectoryInfo DictionariesDirectory { get; }
-
-        protected static ILogger L => Global.Logger;
         #endregion
 
         #region Methods
@@ -125,34 +107,6 @@ namespace Fss.Rasp
         public static bool GetDataDirectorySubDirExists(params string[] paths) =>
            Directory.Exists(GetDataDirectoryPathTo(paths));
 
-        [DebuggerStepThrough]
-        protected static void Info(string messageTemplate, params object[] propertyValues) =>
-            L.Info(messageTemplate, propertyValues);
-
-        [DebuggerStepThrough]
-        protected static void Debug(string messageTemplate, params object[] propertyValues) =>
-            L.Debug(messageTemplate, propertyValues);
-
-        [DebuggerStepThrough]
-        protected static void Warn(string messageTemplate, params object[] propertyValues) =>
-            L.Warn(messageTemplate, propertyValues);
-
-        [DebuggerStepThrough]
-        protected static void Error(string messageTemplate, params object[] propertyValues) =>
-            L.Error(messageTemplate, propertyValues);
-
-        [DebuggerStepThrough]
-        protected static void Error(Exception e, string messageTemplate, params object[] propertyValues) =>
-            L.Error(e, messageTemplate, propertyValues);
-
-        [DebuggerStepThrough]
-        protected static void Verbose(string messageTemplate, params object[] propertyValues) =>
-            L.Verbose(messageTemplate, propertyValues);
-
-        [DebuggerStepThrough]
-        protected static IOperationContext Begin(string messageTemplate, params object[] propertyValues) =>
-            L.Begin(messageTemplate, propertyValues);
-
         protected static void SetPropFromDict(Type t, object o, Dictionary<string, object> p)
         {
             foreach (var prop in t.GetProperties())
@@ -172,13 +126,8 @@ namespace Fss.Rasp
         }
 
         [DebuggerStepThrough]
-        protected virtual void EnqueueMessage(Message message) => Global.MessageQueue.Enqueue(type, message);
+        protected virtual void EnqueueMessage(Message message) => Global.MessageQueue.Enqueue(this, message);
 
-        [DebuggerStepThrough]
-        protected void ThrowIfNotInitialized()
-        {
-            if (Status != ApiStatus.Initialized) throw new Exception("This object is not initialized.");
-        }
 
         [DebuggerStepThrough]
         protected void ThrowIfNotOk()

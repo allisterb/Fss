@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using static OLAF.Win32.UnsafeNativeMethods;
+using static Fss.Rasp.Win32.UnsafeNativeMethods;
 
 namespace Fss.Rasp.Win32
 {

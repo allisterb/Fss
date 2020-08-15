@@ -18,7 +18,7 @@ namespace Fss.Rasp
 
         ApiStatus Status { get; }
 
-        List<Thread> Threads { get; }
+        List<Thread> QueueObserverThreads { get; }
 
         Type Type { get; }
 

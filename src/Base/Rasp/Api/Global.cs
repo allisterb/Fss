@@ -15,13 +15,13 @@ namespace Fss.Rasp
         #region Constructor
         static Global()
         {
-            ActivityDetectorAssemblies = Assembly.GetExecutingAssembly().LoadAllFrom("OLAF.ActivityDetectors.*.dll") ??
+            ActivityDetectorAssemblies = Assembly.GetExecutingAssembly().LoadAllFrom("Fss.ActivityDetectors.*.dll") ??
                 throw new Exception("No activity detector assemblies found in directory: " + AssemblyDirectory.FullName + ".");
 
-            MonitorAssemblies = Assembly.GetExecutingAssembly().LoadAllFrom("OLAF.Monitors.*.dll") ??
+            MonitorAssemblies = Assembly.GetExecutingAssembly().LoadAllFrom("Fss.Monitors.*.dll") ??
                 throw new Exception("No monitor assemblies found in directory: " + AssemblyDirectory.FullName + ".");
 
-            ServiceAssemblies = Assembly.GetExecutingAssembly().LoadAllFrom("OLAF.Services.*.dll") ??
+            ServiceAssemblies = Assembly.GetExecutingAssembly().LoadAllFrom("Fss.Services.*.dll") ??
                 throw new Exception("No service assemblies found in directory: " + AssemblyDirectory.FullName + ".");
 
             LoadedAssemblies = 
@@ -35,8 +35,6 @@ namespace Fss.Rasp
         #endregion
 
         #region Properties
-        public static ILogger Logger { get; private set; } = new SimpleConsoleLogger();
-
         private static DirectoryInfo AssemblyDirectory = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
 
         private static Version AssemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
@@ -57,46 +55,6 @@ namespace Fss.Rasp
         #endregion
 
         #region Methods
-        public static void SetupLogger(Func<ILogger> logger)
-        {
-            lock (setupLoggerLock)
-            {
-                if (!loggerIsSetup)
-                {
-                    if (!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "logs")))
-                    {
-                        Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "logs"));
-                    }
-                    Logger = logger();
-                    loggerIsSetup = true;
-                }
-                else
-                {
-                    throw new InvalidOperationException("The global logger is already configured.");
-                }
-            }
-        }
-
-        public static void CloseLogger()
-        {
-            if (Logger == null)
-            {
-                throw new InvalidOperationException("No logger is assigned.");
-            }
-            Logger.Close();
-        }
-
-        public static void SetupMessageQueue()
-        {
-            Type[] queueTypes = GetTypesImplementing<IQueueProducer>().ToArray();
-            lock (setupMessageQueueLock)
-            {
-                if (MessageQueue == null)
-                {
-                    MessageQueue = new MessageQueue(queueTypes);
-                }
-            }
-        }
 
         public static Type[] GetSubTypes<T>(string assemblyName = "")
         {
@@ -145,7 +103,8 @@ namespace Fss.Rasp
                 select type;
             return types.ToArray();
         }
-        
+        #endregion
+        /**
         public static string GetAppSetting(string fileName, string key, bool throwIfNotExists = false)
         {
             if (!File.Exists(fileName))
@@ -175,11 +134,9 @@ namespace Fss.Rasp
             return ConfigurationManager.AppSettings[key];
         }
         #endregion
-
+        **/
         #region Fields
-        private static object setupLoggerLock = new object();
-        private static bool loggerIsSetup = false;
-        private static object setupMessageQueueLock = new object();
+        //private static object setupLoggerLock = new object();
         #endregion
     }
 }

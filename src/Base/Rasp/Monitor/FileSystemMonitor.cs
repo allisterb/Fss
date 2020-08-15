@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-using OLAF.Win32;
+using Fss.Rasp.Win32;
 namespace Fss.Rasp
 {
     public abstract class FileSystemMonitor<TDetector, TDetectorMessage, TMonitorMessage> : 
@@ -53,7 +53,7 @@ namespace Fss.Rasp
                                 IntPtr hFindFile = UnsafeNativeMethods.FindFirstFile(searchPattern, ref findFileData);
                                 if (hFindFile != UnsafeNativeMethods.INVALID_HANDLE_VALUE)
                                 {
-                                    Verbose("Adding {0} {1} to monitored paths.", dir.FullName, ext);
+                                    Info("Adding {0} {1} to monitored paths.", dir.FullName, ext);
                                 }
                                 else
                                 {
